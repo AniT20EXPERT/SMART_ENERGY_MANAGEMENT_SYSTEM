@@ -1,6 +1,7 @@
 import json
 import paho.mqtt.client as mqtt
 from format_time import format_simulation_time
+from sensors import SensorDataCollector
 class GenerationBase:
     """Base class for all generation units using a generation function"""
 
@@ -20,6 +21,9 @@ class GenerationBase:
         self.mqtt_client = mqtt.Client()
         self.mqtt_client.connect("localhost", 1883, 60)
         self.mqtt_client.loop_start()
+        
+        # Sensor data collector
+        self.sensor_collector = SensorDataCollector(location=location)
 
     def generate(self, sim_time=None, **kwargs):
         """
@@ -54,11 +58,29 @@ class GenerationBase:
             
         time_str = format_simulation_time(self.simulation_time)
         
+        # Get sensor data
+        sensor_data = self.sensor_collector.get_all_sensor_data(
+            self.simulation_time,
+            "generation",
+            abs(self.current_output)
+        )
+        
         state = {
             "device_id": self.id,
             "current_output": self.current_output,
             "capacity_kW": self.capacity_kW,
             "location": self.location,
-            "simulated_time": time_str
+            "simulated_time": time_str,
+            # Add all sensor data
+            **sensor_data
         }
         self.mqtt_client.publish(topic, json.dumps(state))
+        
+        # Also publish to generation_state topic for database aggregation
+        generation_state = {
+            "device_id": self.id,
+            "current_output": self.current_output,
+            "time": time_str,
+            "device_type": "generation"
+        }
+        self.mqtt_client.publish("generation_state", json.dumps(generation_state))

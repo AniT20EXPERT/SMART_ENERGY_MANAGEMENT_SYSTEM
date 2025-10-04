@@ -1,6 +1,7 @@
 import json
 import paho.mqtt.client as mqtt
 from format_time import format_simulation_time
+from sensors import SensorDataCollector
 
 class ConsumerBase:
     """Base class for consumer components"""
@@ -19,6 +20,9 @@ class ConsumerBase:
         self.mqtt_client = mqtt.Client()
         self.mqtt_client.connect("localhost", 1883, 60)
         self.mqtt_client.loop_start()
+        
+        # Sensor data collector
+        self.sensor_collector = SensorDataCollector(location=f"consumer_{device_id}")
 
     def get_demand(self, sim_time):
         """Return current demand in kW (after efficiency), using simulated time."""
@@ -43,11 +47,20 @@ class ConsumerBase:
             
         time_str = format_simulation_time(self.simulation_time)
         
+        # Get sensor data
+        sensor_data = self.sensor_collector.get_consumer_sensor_data(
+            self.simulation_time,
+            "generic",
+            abs(self.power)
+        )
+        
         state = {
             "device_id": self.id,
             "power": self.power,
             "current": self.current,
             "voltage": self.voltage,
-            "simulated_time": time_str
+            "simulated_time": time_str,
+            # Add all sensor data
+            **sensor_data
         }
         self.mqtt_client.publish(topic, json.dumps(state))

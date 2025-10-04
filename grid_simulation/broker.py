@@ -22,16 +22,19 @@ class DataLogger:
         self.influx_org = os.getenv("INFLUX_ORG")
         self.influx_bucket = os.getenv("INFLUX_BUCKET")
         
-        self.batch_size = 200  # Number of points to collect before writing
+        self.batch_size = 5000  # Number of points to collect before writing
         self.points_buffer = []
 
         # Configure write options for batching
+        from influxdb_client_3 import InfluxDBClient3, WriteOptions
+
         write_options = WriteOptions(
-            batch_size=self.batch_size,
-            flush_interval=1_000,  # Flush every 1 second
-            jitter_interval=200,   # Random delay to avoid spikes
-            retry_interval=5_000   # Retry failed writes after 5 seconds
+            batch_size=10_000,        # buffer more points before writing
+            flush_interval=10_000,    # flush every 10 seconds (less frequent writes)
+            jitter_interval=2_000,    # spread out flushes to avoid bursts
+            retry_interval=30_000,    # wait 30s before retrying failed writes
         )
+
 
         # Initialize InfluxDB client with write options
         self.influx_client = InfluxDBClient3(
@@ -57,7 +60,7 @@ class DataLogger:
         try:
             data = json.loads(msg.payload.decode())
             topic = msg.topic
-            print(f"Received data on {topic}: {data}")
+            # print(f"Received data on {topic}: {data}")
 
             # Routing updates handled separately
             if topic == self.routing_topic:

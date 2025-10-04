@@ -1,4 +1,5 @@
 from consumers.consumer_base import ConsumerBase
+import json
 
 class EVChargingStation(ConsumerBase):
     def __init__(self, demand_function, num_ports, max_power_kw, id, efficiency=0.95, voltage=400):
@@ -28,3 +29,36 @@ class EVChargingStation(ConsumerBase):
         total_demand = min(base_demand + ev_demand, self.max_power_kw)
         self.power = total_demand
         return total_demand
+    
+    def publish_state(self, sim_time=None):
+        """Publish MQTT state with EV charging station-specific sensor data."""
+        topic = f"consumers/{self.id}/state"
+        
+        # Use provided simulation time or last known time
+        if sim_time is not None:
+            self.simulation_time = sim_time
+            
+        from format_time import format_simulation_time
+        time_str = format_simulation_time(self.simulation_time)
+        
+        # Get EV charging station-specific sensor data
+        sensor_data = self.sensor_collector.get_consumer_sensor_data(
+            self.simulation_time,
+            "ev_charging",
+            abs(self.power)
+        )
+        
+        state = {
+            "device_id": self.id,
+            "power": self.power,
+            "current": self.current,
+            "voltage": self.voltage,
+            "simulated_time": time_str,
+            "num_ports": self.num_ports,
+            "max_power_kw": self.max_power_kw,
+            "connected_evs_count": len(self.connected_evs),
+            "connected_ev_ids": [ev.id for ev in self.connected_evs],
+            # Add all sensor data
+            **sensor_data
+        }
+        self.mqtt_client.publish(topic, json.dumps(state))

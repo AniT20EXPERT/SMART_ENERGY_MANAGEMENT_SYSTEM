@@ -17,6 +17,9 @@ from generation.external import external_generation_function
 from generation.solar_power_plant import SolarPowerPlant
 from generation.wind_power_plant import WindPowerPlant
 
+# Import sensor system
+from sensors import SensorDataCollector
+
 # Imports for grid
 from grid.grid_base import GridBase
 from grid.inverter import Inverter
@@ -508,14 +511,15 @@ class GridVisualizer:
 def main():
     grid = Grid()
     
-    # Create 5 Solar Power Plants
+    # Create 2 Solar Power Plants
     solar_plants = []
-    for i in range(5):
+    for i in range(2):
         capacity = random.uniform(500, 2000)
         plant = SolarPowerPlant(
             capacity_kW=capacity,
             location=f"SolarSite_{i+1}",
-            panel_area_m2=capacity*5
+            panel_area_m2=capacity*5,
+            rated_voltage=600.0  # 600V DC for utility-scale solar
         )
         inverter = Inverter(efficiency=0.98, input_source_id=None, output_source_id=None, inverter_type="DC-AC")
         bess = PowerPlantBESS(
@@ -527,14 +531,15 @@ def main():
         grid.add_power_plant(plant, inverter, bess)
         solar_plants.append(plant)
     
-    # Create 3 Wind Power Plants
+    # Create 1 Wind Power Plant
     wind_plants = []
-    for i in range(3):
+    for i in range(1):
         capacity = random.uniform(1000, 3000)
         plant = WindPowerPlant(
             capacity_kW=capacity,
             location=f"WindSite_{i+1}",
-            rotor_diameter_m=random.uniform(50, 100)
+            rotor_diameter_m=random.uniform(50, 100),
+            rated_voltage=690.0  # 690V AC for wind turbines
         )
         inverter = Inverter(efficiency=0.98, input_source_id=None, output_source_id=None, inverter_type="DC-AC")
         bess = PowerPlantBESS(
@@ -556,9 +561,9 @@ def main():
     transformer = Transformer(efficiency=0.97, input_source_id='high_voltage', output_source_id='low_voltage', rated_power_kVA=10000)
     grid.add_transformer(transformer)
     
-    # Create 100 Houses
+    # Create 5 Houses
     houses = []
-    for i in range(100):
+    for i in range(5):
         appliances = {
             "lighting": 0.5,
             "hvac": random.uniform(1.0, 3.0),
@@ -574,9 +579,9 @@ def main():
         )
         houses.append(house)
     
-    # Create 100 Industries
+    # Create 3 Industries
     industries = []
-    for i in range(100):
+    for i in range(3):
         machinery = {
             "motor": random.uniform(10, 50),
             "equipment": random.uniform(20, 100)
@@ -592,9 +597,9 @@ def main():
         )
         industries.append(industry)
     
-    # Create 10 EV Charging Stations
+    # Create 2 EV Charging Stations
     charging_stations = []
-    for i in range(10):
+    for i in range(2):
         station = EVChargingStation(
             demand_function=house_demand_function,
             num_ports=random.randint(4, 10),
@@ -605,9 +610,9 @@ def main():
         )
         charging_stations.append(station)
     
-    # Create 1000 Electric Vehicles with Batteries
+    # Create 20 Electric Vehicles with Batteries
     evs = []
-    for i in range(1000):
+    for i in range(20):
         battery = EVBattery(
             capacity_kwh=random.uniform(40, 100),
             rated_voltage=400,
@@ -627,7 +632,7 @@ def main():
     ev_manager = DynamicEVManager(evs, charging_stations)
     
     # Connect some initial EVs
-    for ev in evs[:50]:
+    for ev in evs[:5]:
         station = random.choice(charging_stations)
         if station.connect_ev(ev):
             ev.plug_in()
@@ -641,45 +646,68 @@ def main():
     # Simulation loop
     current_time = datetime(2025, 10, 4, 10, 0)
     real_start = time.time()
-    sim_step_minutes = 60  # 1 hour simulation steps
+    sim_step_minutes = 15  # 15 minute simulation steps (faster, more granular)
     sim_step_seconds = sim_step_minutes * 60
-    scale = 120  # 1 hour sim time = 30 seconds real time
-    publish_interval_sim_min = 60  # Changed to 60 minutes to match sim_step_minutes
+    scale = 3600  # 1 hour sim time = 1 second real time (much faster)
+    publish_interval_sim_min = 240  # Publish every 240 minutes (4 hours) of simulation time
     publish_interval_steps = max(1, publish_interval_sim_min // sim_step_minutes)  # Ensure no division by zero
     step_count = 0
     duration_h = sim_step_minutes / 60.0
+
+    # Simulation duration settings
+    simulation_days = 7  # Run for 7 days
+    total_sim_hours = simulation_days * 24
+    total_sim_steps = total_sim_hours * (60 // sim_step_minutes)  # Total steps for the simulation
+    max_real_time_minutes = 30  # Maximum 30 minutes real time
     
     print("Starting enhanced EMS simulation with:")
     print("- Real-time power flow visualization")
     print("- Dynamic EV arrivals/departures")
     print("- Power routing per consumer type")
     print("- Topology-aware grid connections")
-    print("\nSimulation will run for 10 minutes real-time...")
+    print(f"- {simulation_days} days simulation time ({total_sim_hours} hours)")
+    print(f"- {sim_step_minutes}-minute time steps")
+    print(f"- Maximum {max_real_time_minutes} minutes real-time")
+    print(f"- Total simulation steps: {total_sim_steps}")
     
-    while True:
+    while step_count < total_sim_steps:
         real_now = time.time()
         real_elapsed = real_now - real_start
-        if real_elapsed >= 10 * 60:
+        
+        # Exit conditions: either completed simulation or exceeded real time limit
+        if real_elapsed >= max_real_time_minutes * 60:
+            print(f"\nReal-time limit reached ({max_real_time_minutes} minutes). Stopping simulation.")
             break
         
-        print(f"\n{'='*60}")
-        print(f"Simulation at time: {current_time}")
+        # Progress reporting
+        progress_percent = (step_count / total_sim_steps) * 100
+        real_time_elapsed = real_elapsed / 60  # minutes
+        
+        if step_count % (publish_interval_steps * 2) == 0:  # Report every 8 hours of sim time
+            print(f"\n{'='*60}")
+            print(f"Progress: {progress_percent:.1f}% | Step: {step_count}/{total_sim_steps}")
+            print(f"Simulation time: {current_time.strftime('%Y-%m-%d %H:%M')}")
+            print(f"Real time elapsed: {real_time_elapsed:.1f} minutes")
         
         # Simulate EV dynamics
         ev_manager.simulate_arrivals_departures(current_time)
-        print(f"EVs at stations: {len(ev_manager.connected_evs)}, Available: {len(ev_manager.available_evs)}")
         
         # Run grid simulation
         grid.simulate_step(current_time, solar_plants, wind_plants, houses, industries, charging_stations, duration_h)
-        print(f"Supply: {grid.total_supply:.2f} kW, Demand: {grid.total_demand:.2f} kW")
         
-        # Example: Dynamically disable/enable connections (simulate grid events)
-        if step_count == 10:
-            print("Simulating grid event: Disabling SolarSite_1 connection")
+        # Grid events simulation (spread across the 7 days)
+        if step_count == total_sim_steps // 7:  # Day 1
+            print("Day 1: Simulating grid event - Disabling SolarSite_1 connection")
             grid.topology.disable_connection('SolarSite_1', 'Grid')
-        if step_count == 20:
-            print("Re-enabling SolarSite_1 connection")
+        elif step_count == total_sim_steps // 7 * 2:  # Day 2
+            print("Day 2: Re-enabling SolarSite_1 connection")
             grid.topology.enable_connection('SolarSite_1', 'Grid')
+        elif step_count == total_sim_steps // 7 * 4:  # Day 4
+            print("Day 4: Simulating maintenance - Disabling WindSite_1 connection")
+            grid.topology.disable_connection('WindSite_1', 'Grid')
+        elif step_count == total_sim_steps // 7 * 5:  # Day 5
+            print("Day 5: Re-enabling WindSite_1 connection")
+            grid.topology.enable_connection('WindSite_1', 'Grid')
         
         # Charge connected EVs
         for station in charging_stations:
@@ -687,6 +715,8 @@ def main():
                 ev.charge_ev(current_time, duration_h=duration_h)
         
         step_count += 1
+        
+        # Publish data at regular intervals
         if step_count % publish_interval_steps == 0:
             # Publish all devices
             for plant in solar_plants + wind_plants:
@@ -712,11 +742,20 @@ def main():
         # Advance simulated time
         current_time += timedelta(minutes=sim_step_minutes)
         
-        # Sleep for corresponding real time
+        # Sleep for corresponding real time (much faster now)
         real_sleep = sim_step_seconds / scale
         time.sleep(real_sleep)
     
-    print("\nSimulation complete!")
+    # Final simulation summary
+    final_real_time = (time.time() - real_start) / 60  # minutes
+    final_sim_time = current_time
+    print(f"\n{'='*60}")
+    print("SIMULATION COMPLETE!")
+    print(f"Final simulation time: {final_sim_time.strftime('%Y-%m-%d %H:%M')}")
+    print(f"Total real time: {final_real_time:.1f} minutes")
+    print(f"Total simulation steps: {step_count}")
+    print(f"Simulation speed: {step_count / final_real_time:.1f} steps/minute")
+    print("="*60)
     visualizer.stop()
 
 if __name__ == '__main__':

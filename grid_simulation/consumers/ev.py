@@ -34,6 +34,6 @@ class ElectricVehicle(ConsumerBase):
         demand_kw = self.get_demand(time)
 
         # Charge the battery
-        self.battery.charge(demand_kw, duration_h)      # Charging rate needs to vary, or recalculate charging requirements at every time step
+        self.battery.charge(demand_kw, duration_h, sim_time=time)      # Charging rate needs to vary, or recalculate charging requirements at every time step
         self.charging_status = "charging"
         return demand_kw

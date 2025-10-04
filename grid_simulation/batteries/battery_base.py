@@ -1,6 +1,7 @@
 import json
 import paho.mqtt.client as mqtt
 from format_time import format_simulation_time
+from sensors import SensorDataCollector
 
 class BaseBattery:
     def __init__(self, capacity_kwh, rated_voltage, rated_power_kw,
@@ -34,6 +35,9 @@ class BaseBattery:
         self.mqtt_client = mqtt.Client()
         self.mqtt_client.connect("localhost", 1883, 60)
         self.mqtt_client.loop_start()
+        
+        # Sensor data collector
+        self.sensor_collector = SensorDataCollector(location=f"battery_{device_id}")
 
     def _update_operating_conditions(self, power_kw, duration_h, charging=True):
         """Internal helper to update dynamic parameters."""
@@ -75,7 +79,7 @@ class BaseBattery:
         self._update_operating_conditions(power_kw, duration_h, charging=True)
 
         # Publish state
-        self.publish_state()
+        self.publish_state(sim_time)
 
     def discharge(self, power_kw, duration_h, sim_time=None):
         """Discharge the battery with given power (kW) for duration (h)."""
@@ -95,7 +99,7 @@ class BaseBattery:
         self._update_operating_conditions(power_kw, duration_h, charging=False)
 
         # Publish state
-        self.publish_state()
+        self.publish_state(sim_time)
 
     def publish_state(self, sim_time=None):
         """Publish MQTT state including simulation time in RFC3339 format."""
@@ -106,6 +110,12 @@ class BaseBattery:
             self.simulation_time = sim_time
 
         time_str = format_simulation_time(self.simulation_time)
+
+        # Get sensor data
+        sensor_data = self.sensor_collector.get_battery_sensor_data(
+            self.simulation_time, 
+            abs(self.power)
+        )
 
         state = {
             "device_id": self.id,
@@ -118,8 +128,20 @@ class BaseBattery:
             "temperature": self.temperature,
             "remaining_capacity": self.remaining_capacity,
             "cycle_count": self.cycle_count,
-            "mode": self.mode
+            "mode": self.mode,
+            # Add all sensor data
+            **sensor_data
         }
 
         self.mqtt_client.publish(topic, json.dumps(state))
+        
+        # Also publish to generation_state topic when discharging (generating power)
+        if self.power < 0:  # Negative power means discharging (generating)
+            generation_state = {
+                "device_id": self.id,
+                "current_output": abs(self.power),  # Positive value for generation
+                "time": time_str,
+                "device_type": "bess"
+            }
+            self.mqtt_client.publish("generation_state", json.dumps(generation_state))
 
