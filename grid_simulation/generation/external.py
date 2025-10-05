@@ -13,6 +13,7 @@ class ExternalSource(GenerationBase):
         self.rated_voltage = rated_voltage  # Grid voltage (typically 11kV, 33kV, or 132kV)
         self.current_voltage = rated_voltage
         self.current_current = 0.0
+        self.generation_type = "external_grid"  # Set generation type for cost calculation
     
     def calculate_electrical_parameters(self):
         """Calculate voltage and current based on current output and grid conditions"""
@@ -62,6 +63,9 @@ class ExternalSource(GenerationBase):
             abs(self.current_output)
         )
         
+        # Get cost data
+        cost_data = self.get_total_costs()
+        
         state = {
             "device_id": self.id,
             "current_output": self.current_output,
@@ -73,6 +77,8 @@ class ExternalSource(GenerationBase):
             "voltage": self.current_voltage,
             "current": self.current_current,
             "rated_voltage": self.rated_voltage,
+            # Add cost data
+            **cost_data,
             # Add all sensor data
             **sensor_data
         }

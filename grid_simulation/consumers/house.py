@@ -2,10 +2,10 @@ from consumers.consumer_base import ConsumerBase
 import json
 class House(ConsumerBase):
     def __init__(self, demand_function, num_occupants, appliances, id, efficiency=0.95, voltage=230):
-        super().__init__(demand_function, efficiency, voltage)
+        super().__init__(demand_function, efficiency, voltage, device_id=id)
         self.num_occupants = num_occupants
         self.appliances = appliances  # dict of appliances and rated power
-        self.id = id
+        self.consumer_type = "house"  # Set consumer type for cost calculation
 
     def get_demand(self, time):
         """House demand = base demand function + appliance usage."""
@@ -33,6 +33,9 @@ class House(ConsumerBase):
             abs(self.power)
         )
         
+        # Get cost data
+        cost_data = self.get_total_costs()
+        
         state = {
             "device_id": self.id,
             "power": self.power,
@@ -41,6 +44,8 @@ class House(ConsumerBase):
             "simulated_time": time_str,
             "num_occupants": self.num_occupants,
             "appliances": self.appliances,
+            # Add cost data
+            **cost_data,
             # Add all sensor data
             **sensor_data
         }

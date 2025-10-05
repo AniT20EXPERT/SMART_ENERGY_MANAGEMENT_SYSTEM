@@ -9,6 +9,7 @@ class WindPowerPlant(GenerationBase):
         self.rated_voltage = rated_voltage  # AC voltage for wind turbines (typically 690V)
         self.current_voltage = rated_voltage
         self.current_current = 0.0
+        self.generation_type = "wind"  # Set generation type for cost calculation
 
     def wind_generation_function(self, wind_speed_m_s=0, **kwargs):
         """Compute wind output (simplified cubic law, capped at capacity)"""
@@ -75,6 +76,9 @@ class WindPowerPlant(GenerationBase):
             abs(self.current_output)
         )
         
+        # Get cost data
+        cost_data = self.get_total_costs()
+        
         state = {
             "device_id": self.id,
             "current_output": self.current_output,
@@ -86,6 +90,8 @@ class WindPowerPlant(GenerationBase):
             "voltage": self.current_voltage,
             "current": self.current_current,
             "rated_voltage": self.rated_voltage,
+            # Add cost data
+            **cost_data,
             # Add all sensor data
             **sensor_data
         }

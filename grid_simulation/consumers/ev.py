@@ -12,6 +12,8 @@ class ElectricVehicle(ConsumerBase):
         self.charging_status = "idle"   # idle, charging, discharging (for V2G)
         self.connected = False          # whether EV is plugged in at a charging station
         self.id = id
+        self.voltage = 400
+        self.current = 0.0
 
     def plug_in(self):
         """Connect EV to charging station / grid."""

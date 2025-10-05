@@ -6,3 +6,4 @@ class Substation(GridBase):
     def __init__(self, efficiency, input_source_id, output_source_id, voltage_level_kV):
         super().__init__(efficiency, input_source_id, output_source_id)
         self.voltage_level_kV = voltage_level_kV
+        self.operation_type = "substation"  # Set operation type for cost calculation

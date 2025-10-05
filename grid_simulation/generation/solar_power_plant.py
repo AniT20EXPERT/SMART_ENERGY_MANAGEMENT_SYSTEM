@@ -9,6 +9,7 @@ class SolarPowerPlant(GenerationBase):
         self.rated_voltage = rated_voltage  # DC voltage at maximum power point
         self.current_voltage = rated_voltage
         self.current_current = 0.0
+        self.generation_type = "solar"  # Set generation type for cost calculation
 
     def solar_generation_function(self, sunlight_factor=1.0, **kwargs):
         """Compute solar output based on sunlight factor (0 to 1) using instance capacity"""

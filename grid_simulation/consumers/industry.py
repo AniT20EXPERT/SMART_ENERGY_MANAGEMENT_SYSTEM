@@ -3,11 +3,11 @@ import json
 
 class Industry(ConsumerBase):
     def __init__(self, demand_function, industry_type, shift_hours, machinery, id, efficiency=0.85, voltage=415):
-        super().__init__(demand_function, efficiency, voltage)
+        super().__init__(demand_function, efficiency, voltage, device_id=id)
         self.industry_type = industry_type
         self.shift_hours = shift_hours  # e.g. [(8,16), (16,24)]
         self.machinery = machinery      # dict of machines and rated power
-        self.id = id
+        self.consumer_type = "industry"  # Set consumer type for cost calculation
 
     def get_demand(self, time):
         """Industry demand depends on active shifts + machinery."""
@@ -36,6 +36,9 @@ class Industry(ConsumerBase):
             abs(self.power)
         )
         
+        # Get cost data
+        cost_data = self.get_total_costs()
+        
         state = {
             "device_id": self.id,
             "power": self.power,
@@ -45,6 +48,8 @@ class Industry(ConsumerBase):
             "industry_type": self.industry_type,
             "shift_hours": self.shift_hours,
             "machinery": self.machinery,
+            # Add cost data
+            **cost_data,
             # Add all sensor data
             **sensor_data
         }

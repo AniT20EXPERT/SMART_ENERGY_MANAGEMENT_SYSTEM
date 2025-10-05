@@ -6,3 +6,4 @@ class Inverter(GridBase):
     def __init__(self, efficiency, input_source_id, output_source_id, inverter_type="DC-AC"):
         super().__init__(efficiency, input_source_id, output_source_id)
         self.inverter_type = inverter_type
+        self.operation_type = "distribution"  # Set operation type for cost calculation

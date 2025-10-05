@@ -2,6 +2,7 @@ import json
 import paho.mqtt.client as mqtt
 from format_time import format_simulation_time
 from sensors import SensorDataCollector
+from cost_calculator import CostCalculator
 
 class BaseBattery:
     def __init__(self, capacity_kwh, rated_voltage, rated_power_kw,
@@ -38,6 +39,15 @@ class BaseBattery:
         
         # Sensor data collector
         self.sensor_collector = SensorDataCollector(location=f"battery_{device_id}")
+        
+        # Cost calculator
+        self.cost_calculator = CostCalculator()
+        
+        # Cost tracking
+        self.total_charging_cost = 0.0
+        self.total_discharging_cost = 0.0
+        self.total_storage_cost = 0.0
+        self.current_operation_cost = 0.0
 
     def _update_operating_conditions(self, power_kw, duration_h, charging=True):
         """Internal helper to update dynamic parameters."""
@@ -75,6 +85,13 @@ class BaseBattery:
         self.power = power_kw
         self.simulation_time = sim_time
 
+        # Calculate charging cost
+        charging_cost_data = self.cost_calculator.calculate_battery_charging_cost(
+            energy_added, duration_h, sim_time
+        )
+        self.current_operation_cost = charging_cost_data["total_cost_inr"]
+        self.total_charging_cost += self.current_operation_cost
+
         # Update feature parameters
         self._update_operating_conditions(power_kw, duration_h, charging=True)
 
@@ -95,11 +112,40 @@ class BaseBattery:
         self.cycle_count += 1 if self.remaining_capacity == 0 else 0
         self.simulation_time = sim_time
 
+        # Calculate discharging cost
+        discharging_cost_data = self.cost_calculator.calculate_battery_discharging_cost(
+            energy_removed, duration_h, sim_time
+        )
+        self.current_operation_cost = discharging_cost_data["total_cost_inr"]
+        self.total_discharging_cost += self.current_operation_cost
+
         # Update feature parameters
         self._update_operating_conditions(power_kw, duration_h, charging=False)
 
         # Publish state
         self.publish_state(sim_time)
+
+    def calculate_storage_cost(self, duration_h, sim_time=None):
+        """Calculate storage cost for the current energy stored"""
+        if self.remaining_capacity > 0:
+            storage_cost_data = self.cost_calculator.calculate_battery_storage_cost(
+                self.remaining_capacity, duration_h, sim_time
+            )
+            self.current_operation_cost = storage_cost_data["total_cost_inr"]
+            self.total_storage_cost += self.current_operation_cost
+            return storage_cost_data
+        return None
+
+    def get_total_costs(self):
+        """Get total cost breakdown for this battery"""
+        return {
+            "total_charging_cost_inr": round(self.total_charging_cost, 2),
+            "total_discharging_cost_inr": round(self.total_discharging_cost, 2),
+            "total_storage_cost_inr": round(self.total_storage_cost, 2),
+            "total_operation_cost_inr": round(self.total_charging_cost + self.total_discharging_cost + self.total_storage_cost, 2),
+            "current_operation_cost_inr": round(self.current_operation_cost, 2),
+            "currency": "INR"
+        }
 
     def publish_state(self, sim_time=None):
         """Publish MQTT state including simulation time in RFC3339 format."""
@@ -117,6 +163,9 @@ class BaseBattery:
             abs(self.power)
         )
 
+        # Get cost data
+        cost_data = self.get_total_costs()
+
         state = {
             "device_id": self.id,
             "simulated_time": time_str,
@@ -129,6 +178,8 @@ class BaseBattery:
             "remaining_capacity": self.remaining_capacity,
             "cycle_count": self.cycle_count,
             "mode": self.mode,
+            # Add cost data
+            **cost_data,
             # Add all sensor data
             **sensor_data
         }

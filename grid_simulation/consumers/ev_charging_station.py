@@ -3,11 +3,11 @@ import json
 
 class EVChargingStation(ConsumerBase):
     def __init__(self, demand_function, num_ports, max_power_kw, id, efficiency=0.95, voltage=400):
-        super().__init__(demand_function, efficiency, voltage)
+        super().__init__(demand_function, efficiency, voltage, device_id=id)
         self.num_ports = num_ports
         self.max_power_kw = max_power_kw
         self.connected_evs = []
-        self.id = id
+        self.consumer_type = "ev_charging"  # Set consumer type for cost calculation
 
     def connect_ev(self, ev):
         if len(self.connected_evs) < self.num_ports:
@@ -48,6 +48,9 @@ class EVChargingStation(ConsumerBase):
             abs(self.power)
         )
         
+        # Get cost data
+        cost_data = self.get_total_costs()
+        
         state = {
             "device_id": self.id,
             "power": self.power,
@@ -58,6 +61,8 @@ class EVChargingStation(ConsumerBase):
             "max_power_kw": self.max_power_kw,
             "connected_evs_count": len(self.connected_evs),
             "connected_ev_ids": [ev.id for ev in self.connected_evs],
+            # Add cost data
+            **cost_data,
             # Add all sensor data
             **sensor_data
         }

@@ -1,0 +1,67 @@
+{
+  "cost_config": {
+    "currency": "INR",
+    "unit": "per_kWh",
+    "description": "Cost configuration for Indian power grid operations",
+    "costs": {
+      "battery_operations": {
+        "charging_cost_per_kwh": 0.50,
+        "discharging_cost_per_kwh": 0.50,
+        "storage_cost_per_kwh_hour": 0.10,
+        "description": "Battery operation costs - charging from grid, discharging to grid, and storage maintenance"
+      },
+      "generation": {
+        "solar_generation_cost_per_kwh": 2.50,
+        "wind_generation_cost_per_kwh": 3.20,
+        "external_grid_cost_per_kwh": 8.00,
+        "external_grid_generation_cost_per_kwh": 8.0,
+        "description": "Generation costs - solar and wind have lower costs, external grid is expensive"
+      },
+      "grid_operations": {
+        "transmission_cost_per_kwh": 0.80,
+        "distribution_cost_per_kwh": 1.20,
+        "substation_cost_per_kwh": 0.30,
+        "description": "Grid infrastructure costs for power transmission and distribution"
+      },
+      "consumer_operations": {
+        "house_consumption_cost_per_kwh": 7.50,
+        "industry_consumption_cost_per_kwh": 6.80,
+        "ev_charging_cost_per_kwh": 8.50,
+        "ev_charging_consumption_cost_per_kwh": 7.0,
+        "unknown_consumption_cost_per_kwh": 0.0,
+
+        "description": "Consumer electricity costs - varies by consumer type"
+      }
+    },
+    "time_of_day_multipliers": {
+      "peak_hours": {
+        "start": "18:00",
+        "end": "22:00",
+        "multiplier": 1.5,
+        "description": "Peak hours when electricity costs are higher"
+      },
+      "off_peak_hours": {
+        "start": "22:00",
+        "end": "06:00",
+        "multiplier": 0.7,
+        "description": "Off-peak hours when electricity costs are lower"
+      },
+      "normal_hours": {
+        "multiplier": 1.0,
+        "description": "Normal hours with standard pricing"
+      }
+    },
+    "seasonal_adjustments": {
+      "summer": {
+        "months": ["April", "May", "June", "July", "August", "September"],
+        "multiplier": 1.2,
+        "description": "Summer months with higher demand and costs"
+      },
+      "winter": {
+        "months": ["October", "November", "December", "January", "February", "March"],
+        "multiplier": 0.9,
+        "description": "Winter months with lower demand and costs"
+      }
+    }
+  }
+}
