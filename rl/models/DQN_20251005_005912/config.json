@@ -1,0 +1,30 @@
+{
+  "algorithm": "DQN",
+  "total_timesteps": 500000,
+  "timestamp": "20251005_005912",
+  "use_vec_normalize": false,
+  "hyperparameters": {
+    "policy": "MlpPolicy",
+    "learning_rate": 0.0005,
+    "buffer_size": 100000,
+    "learning_starts": 1000,
+    "batch_size": 128,
+    "tau": 0.005,
+    "gamma": 0.99,
+    "train_freq": 4,
+    "gradient_steps": 1,
+    "target_update_interval": 1000,
+    "exploration_fraction": 0.3,
+    "exploration_initial_eps": 1.0,
+    "exploration_final_eps": 0.01,
+    "policy_kwargs": {
+      "net_arch": [
+        256,
+        256,
+        256
+      ],
+      "activation_fn": "<class 'torch.nn.modules.activation.ReLU'>"
+    },
+    "verbose": 1
+  }
+}
