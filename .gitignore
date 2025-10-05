@@ -2,3 +2,5 @@ grid_simulation/.venv
 binaries
 db_data
 .env
+grid_simulation/sample
+__pycache__

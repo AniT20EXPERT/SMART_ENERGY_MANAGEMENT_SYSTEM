@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-10-05T02:39:26.628017",
+  "features": {
+    "cost_integration": true,
+    "mqtt_integration": true,
+    "rl_action_mapping": true,
+    "sensor_data_collection": true,
+    "performance_monitoring": true,
+    "debug_logging": true,
+    "scenario_switching": true,
+    "real_time_visualization": true
+  }
+}
