@@ -1,13 +1,15 @@
-Team Name : Team Fusion
 
-Contributor : 
-Tanay Shah
-Dhup Thumbadiya
-Anirudhha Dalal
 
 
 
 # ⚡ Smart Energy Management System (Smart EMS)
+
+Team Name : Team Fusion
+
+Contributor : 
+Tanay Shah, 
+Dhup Thumbadiya, 
+Anirudhha Dalal
 
 ## 🧠 Overview
 The **Smart Energy Management System (EMS)** is an intelligent, scalable platform designed to **optimize energy generation, storage, and consumption** across renewable microgrids and smart facilities.  
@@ -138,3 +140,4 @@ It integrates **real-time IoT sensor data**, **AI-driven decision-making**, and 
 
 
 ## 🌐 Repository Structure
+
