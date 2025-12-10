@@ -15,6 +15,7 @@ Anirudhha Dalal
 The **Smart Energy Management System (EMS)** is an intelligent, scalable platform designed to **optimize energy generation, storage, and consumption** across renewable microgrids and smart facilities.  
 It integrates **real-time IoT sensor data**, **AI-driven decision-making**, and **industrial-grade visualization** to improve **efficiency, reliability, and cost-effectiveness** of energy operations.
 [PLEASE GO THROUGH TECHNICAL REPORT PDF FOR MORE INFO]
+
 ---
 
 ## 🚀 Objectives
@@ -140,5 +141,6 @@ It integrates **real-time IoT sensor data**, **AI-driven decision-making**, and 
 
 
 ## 🌐 Repository Structure
+
 
 
